@@ -2,6 +2,8 @@ import logging
 from typing import Optional
 
 import requests
+from open_webui.utils.http import http_request_with_retry
+from open_webui.config import HTTP_REQUEST_TIMEOUT
 from open_webui.retrieval.web.main import SearchResult, get_filtered_results
 from open_webui.env import SRC_LOG_LEVELS
 
@@ -32,7 +34,9 @@ def search_tavily(
         "Authorization": f"Bearer {api_key}",
     }
     data = {"query": query, "max_results": count}
-    response = requests.post(url, headers=headers, json=data)
+    response = http_request_with_retry(
+        "post", url, headers=headers, json=data, timeout=HTTP_REQUEST_TIMEOUT.value
+    )
     response.raise_for_status()
 
     json_response = response.json()

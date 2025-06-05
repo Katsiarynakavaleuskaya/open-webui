@@ -19,6 +19,8 @@ from aiocache import cached
 import aiohttp
 import anyio.to_thread
 import requests
+from open_webui.utils.http import http_request_with_retry
+from open_webui.config import HTTP_REQUEST_TIMEOUT
 
 
 from fastapi import (
@@ -1574,7 +1576,9 @@ async def oauth_callback(provider: str, request: Request, response: Response):
 @app.get("/manifest.json")
 async def get_manifest_json():
     if app.state.EXTERNAL_PWA_MANIFEST_URL:
-        return requests.get(app.state.EXTERNAL_PWA_MANIFEST_URL).json()
+        return http_request_with_retry(
+            "get", app.state.EXTERNAL_PWA_MANIFEST_URL, timeout=HTTP_REQUEST_TIMEOUT.value
+        ).json()
     else:
         return {
             "name": app.state.WEBUI_NAME,

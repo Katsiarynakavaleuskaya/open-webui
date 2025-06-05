@@ -11,6 +11,7 @@ from typing import Generic, Optional, TypeVar
 from urllib.parse import urlparse
 
 import requests
+from open_webui.utils.http import http_request_with_retry
 from pydantic import BaseModel
 from sqlalchemy import JSON, Column, DateTime, Integer, func
 
@@ -666,7 +667,11 @@ CUSTOM_NAME = os.environ.get("CUSTOM_NAME", "")
 
 if CUSTOM_NAME:
     try:
-        r = requests.get(f"https://api.openwebui.com/api/v1/custom/{CUSTOM_NAME}")
+        r = http_request_with_retry(
+            "get",
+            f"https://api.openwebui.com/api/v1/custom/{CUSTOM_NAME}",
+            timeout=HTTP_REQUEST_TIMEOUT.value,
+        )
         data = r.json()
         if r.ok:
             if "logo" in data:
@@ -676,7 +681,9 @@ if CUSTOM_NAME:
                     else data["logo"]
                 )
 
-                r = requests.get(url, stream=True)
+                r = http_request_with_retry(
+                    "get", url, stream=True, timeout=HTTP_REQUEST_TIMEOUT.value
+                )
                 if r.status_code == 200:
                     with open(f"{STATIC_DIR}/favicon.png", "wb") as f:
                         r.raw.decode_content = True
@@ -689,7 +696,9 @@ if CUSTOM_NAME:
                     else data["splash"]
                 )
 
-                r = requests.get(url, stream=True)
+                r = http_request_with_retry(
+                    "get", url, stream=True, timeout=HTTP_REQUEST_TIMEOUT.value
+                )
                 if r.status_code == 200:
                     with open(f"{STATIC_DIR}/splash.png", "wb") as f:
                         r.raw.decode_content = True
@@ -749,6 +758,16 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 CACHE_DIR = DATA_DIR / "cache"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
+
+####################################
+# HTTP Request Timeout
+####################################
+
+HTTP_REQUEST_TIMEOUT = PersistentConfig(
+    "HTTP_REQUEST_TIMEOUT",
+    "http.request_timeout",
+    int(os.environ.get("HTTP_REQUEST_TIMEOUT", "10")),
+)
 
 ####################################
 # DIRECT CONNECTIONS

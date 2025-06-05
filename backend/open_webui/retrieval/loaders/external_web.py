@@ -1,4 +1,6 @@
 import requests
+from open_webui.utils.http import http_request_with_retry
+from open_webui.config import HTTP_REQUEST_TIMEOUT
 import logging
 from typing import Iterator, List, Union
 
@@ -29,7 +31,8 @@ class ExternalWebLoader(BaseLoader):
         for i in range(0, len(self.urls), batch_size):
             urls = self.urls[i : i + batch_size]
             try:
-                response = requests.post(
+                response = http_request_with_retry(
+                    "post",
                     self.external_url,
                     headers={
                         "User-Agent": "Open WebUI (https://github.com/open-webui/open-webui) External Web Loader",
@@ -38,6 +41,7 @@ class ExternalWebLoader(BaseLoader):
                     json={
                         "urls": urls,
                     },
+                    timeout=HTTP_REQUEST_TIMEOUT.value,
                 )
                 response.raise_for_status()
                 results = response.json()

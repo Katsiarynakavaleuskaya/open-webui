@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from typing import Optional
 
 import requests
+from open_webui.utils.http import http_request_with_retry
+from open_webui.config import HTTP_REQUEST_TIMEOUT
 from open_webui.env import SRC_LOG_LEVELS
 from open_webui.retrieval.web.main import SearchResult
 
@@ -46,8 +48,12 @@ def search_exa(
     }
 
     try:
-        response = requests.post(
-            f"{EXA_API_BASE}/search", headers=headers, json=payload
+        response = http_request_with_retry(
+            "post",
+            f"{EXA_API_BASE}/search",
+            headers=headers,
+            json=payload,
+            timeout=HTTP_REQUEST_TIMEOUT.value,
         )
         response.raise_for_status()
         data = response.json()

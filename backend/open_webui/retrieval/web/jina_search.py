@@ -1,6 +1,8 @@
 import logging
 
 import requests
+from open_webui.utils.http import http_request_with_retry
+from open_webui.config import HTTP_REQUEST_TIMEOUT
 from open_webui.retrieval.web.main import SearchResult
 from open_webui.env import SRC_LOG_LEVELS
 from yarl import URL
@@ -31,7 +33,9 @@ def search_jina(api_key: str, query: str, count: int) -> list[SearchResult]:
     payload = {"q": query, "count": count if count <= 10 else 10}
 
     url = str(URL(jina_search_endpoint))
-    response = requests.post(url, headers=headers, json=payload)
+    response = http_request_with_retry(
+        "post", url, headers=headers, json=payload, timeout=HTTP_REQUEST_TIMEOUT.value
+    )
     response.raise_for_status()
     data = response.json()
 
