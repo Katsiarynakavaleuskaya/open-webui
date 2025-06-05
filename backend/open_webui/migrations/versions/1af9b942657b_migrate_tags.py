@@ -12,6 +12,11 @@ from sqlalchemy.sql import table, select, update, column
 from sqlalchemy.engine.reflection import Inspector
 
 import json
+import logging
+from open_webui.env import SRC_LOG_LEVELS
+
+log = logging.getLogger(__name__)
+log.setLevel(SRC_LOG_LEVELS["DB"])
 
 revision = "1af9b942657b"
 down_revision = "242a2047eae0"
@@ -74,7 +79,7 @@ def upgrade():
         tag_updates[row.id] = new_id
 
     for tag_id, new_tag_id in tag_updates.items():
-        print(f"Updating tag {tag_id} to {new_tag_id}")
+        log.info(f"Updating tag {tag_id} to {new_tag_id}")
         if new_tag_id == "pinned":
             # delete tag
             delete_stmt = sa.delete(tag).where(tag.c.id == tag_id)
@@ -86,7 +91,7 @@ def upgrade():
 
             if existing_tag_result:
                 # Handle duplicate case: the new_tag_id already exists
-                print(
+                log.info(
                     f"Tag {new_tag_id} already exists. Removing current tag with ID {tag_id} to avoid duplicates."
                 )
                 # Option 1: Delete the current tag if an update to new_tag_id would cause duplication

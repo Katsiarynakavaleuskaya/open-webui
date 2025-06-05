@@ -11,6 +11,11 @@ import sqlalchemy as sa
 from sqlalchemy.sql import table, select, update
 
 import json
+import logging
+from open_webui.env import SRC_LOG_LEVELS
+
+log = logging.getLogger(__name__)
+log.setLevel(SRC_LOG_LEVELS["DB"])
 
 revision = "242a2047eae0"
 down_revision = "6a39f3d8e55c"
@@ -30,20 +35,20 @@ def upgrade():
 
     if chat_column:
         if isinstance(chat_column["type"], sa.Text):
-            print("Converting 'chat' column to JSON")
+            log.info("Converting 'chat' column to JSON")
 
             if old_chat_exists:
-                print("Dropping old 'old_chat' column")
+                log.info("Dropping old 'old_chat' column")
                 op.drop_column("chat", "old_chat")
 
             # Step 1: Rename current 'chat' column to 'old_chat'
-            print("Renaming 'chat' column to 'old_chat'")
+            log.info("Renaming 'chat' column to 'old_chat'")
             op.alter_column(
                 "chat", "chat", new_column_name="old_chat", existing_type=sa.Text()
             )
 
             # Step 2: Add new 'chat' column of type JSON
-            print("Adding new 'chat' column of type JSON")
+            log.info("Adding new 'chat' column of type JSON")
             op.add_column("chat", sa.Column("chat", sa.JSON(), nullable=True))
         else:
             # If the column is already JSON, no need to do anything
@@ -74,7 +79,7 @@ def upgrade():
         )
 
     # Step 4: Drop 'old_chat' column
-    print("Dropping 'old_chat' column")
+    log.info("Dropping 'old_chat' column")
     op.drop_column("chat", "old_chat")
 
 

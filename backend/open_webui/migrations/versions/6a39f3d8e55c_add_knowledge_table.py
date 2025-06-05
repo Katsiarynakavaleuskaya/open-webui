@@ -10,6 +10,11 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.sql import table, column, select
 import json
+import logging
+from open_webui.env import SRC_LOG_LEVELS
+
+log = logging.getLogger(__name__)
+log.setLevel(SRC_LOG_LEVELS["DB"])
 
 
 revision = "6a39f3d8e55c"
@@ -20,7 +25,7 @@ depends_on = None
 
 def upgrade():
     # Creating the 'knowledge' table
-    print("Creating knowledge table")
+    log.info("Creating knowledge table")
     knowledge_table = op.create_table(
         "knowledge",
         sa.Column("id", sa.Text(), primary_key=True),
@@ -33,7 +38,7 @@ def upgrade():
         sa.Column("updated_at", sa.BigInteger(), nullable=True),
     )
 
-    print("Migrating data from document table to knowledge table")
+    log.info("Migrating data from document table to knowledge table")
     # Representation of the existing 'document' table
     document_table = table(
         "document",
