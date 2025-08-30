@@ -14,6 +14,8 @@ from typing import Optional
 import aiohttp
 import aiofiles
 import requests
+from open_webui.utils.http import http_request_with_retry
+from open_webui.config import HTTP_REQUEST_TIMEOUT
 import mimetypes
 
 from fastapi import (
@@ -565,8 +567,9 @@ def transcription_handler(request, file_path, metadata):
     elif request.app.state.config.STT_ENGINE == "openai":
         r = None
         try:
-            r = requests.post(
-                url=f"{request.app.state.config.STT_OPENAI_API_BASE_URL}/audio/transcriptions",
+            r = http_request_with_retry(
+                "post",
+                f"{request.app.state.config.STT_OPENAI_API_BASE_URL}/audio/transcriptions",
                 headers={
                     "Authorization": f"Bearer {request.app.state.config.STT_OPENAI_API_KEY}"
                 },
@@ -579,6 +582,7 @@ def transcription_handler(request, file_path, metadata):
                         else {}
                     ),
                 },
+                timeout=HTTP_REQUEST_TIMEOUT.value,
             )
 
             r.raise_for_status()
@@ -627,11 +631,13 @@ def transcription_handler(request, file_path, metadata):
                 params["model"] = request.app.state.config.STT_MODEL
 
             # Make request to Deepgram API
-            r = requests.post(
+            r = http_request_with_retry(
+                "post",
                 "https://api.deepgram.com/v1/listen",
                 headers=headers,
                 params=params,
                 data=file_data,
+                timeout=HTTP_REQUEST_TIMEOUT.value,
             )
             r.raise_for_status()
             response_data = r.json()
@@ -731,13 +737,15 @@ def transcription_handler(request, file_path, metadata):
 
             # Use context manager to ensure file is properly closed
             with open(file_path, "rb") as audio_file:
-                r = requests.post(
-                    url=url,
+                r = http_request_with_retry(
+                    "post",
+                    url,
                     files={"audio": audio_file},
                     data=data,
                     headers={
                         "Ocp-Apim-Subscription-Key": api_key,
                     },
+                    timeout=HTTP_REQUEST_TIMEOUT.value,
                 )
 
             r.raise_for_status()
@@ -972,8 +980,10 @@ def get_available_models(request: Request) -> list[dict]:
             "https://api.openai.com"
         ):
             try:
-                response = requests.get(
-                    f"{request.app.state.config.TTS_OPENAI_API_BASE_URL}/audio/models"
+                response = http_request_with_retry(
+                    "get",
+                    f"{request.app.state.config.TTS_OPENAI_API_BASE_URL}/audio/models",
+                    timeout=HTTP_REQUEST_TIMEOUT.value,
                 )
                 response.raise_for_status()
                 data = response.json()
@@ -985,13 +995,14 @@ def get_available_models(request: Request) -> list[dict]:
             available_models = [{"id": "tts-1"}, {"id": "tts-1-hd"}]
     elif request.app.state.config.TTS_ENGINE == "elevenlabs":
         try:
-            response = requests.get(
+            response = http_request_with_retry(
+                "get",
                 "https://api.elevenlabs.io/v1/models",
                 headers={
                     "xi-api-key": request.app.state.config.TTS_API_KEY,
                     "Content-Type": "application/json",
                 },
-                timeout=5,
+                timeout=HTTP_REQUEST_TIMEOUT.value,
             )
             response.raise_for_status()
             models = response.json()
@@ -1018,8 +1029,10 @@ def get_available_voices(request) -> dict:
             "https://api.openai.com"
         ):
             try:
-                response = requests.get(
-                    f"{request.app.state.config.TTS_OPENAI_API_BASE_URL}/audio/voices"
+                response = http_request_with_retry(
+                    "get",
+                    f"{request.app.state.config.TTS_OPENAI_API_BASE_URL}/audio/voices",
+                    timeout=HTTP_REQUEST_TIMEOUT.value,
                 )
                 response.raise_for_status()
                 data = response.json()
@@ -1063,7 +1076,9 @@ def get_available_voices(request) -> dict:
                 "Ocp-Apim-Subscription-Key": request.app.state.config.TTS_API_KEY
             }
 
-            response = requests.get(url, headers=headers)
+            response = http_request_with_retry(
+                "get", url, headers=headers, timeout=HTTP_REQUEST_TIMEOUT.value
+            )
             response.raise_for_status()
             voices = response.json()
 
@@ -1089,12 +1104,14 @@ def get_elevenlabs_voices(api_key: str) -> dict:
 
     try:
         # TODO: Add retries
-        response = requests.get(
+        response = http_request_with_retry(
+            "get",
             "https://api.elevenlabs.io/v1/voices",
             headers={
                 "xi-api-key": api_key,
                 "Content-Type": "application/json",
             },
+            timeout=HTTP_REQUEST_TIMEOUT.value,
         )
         response.raise_for_status()
         voices_data = response.json()

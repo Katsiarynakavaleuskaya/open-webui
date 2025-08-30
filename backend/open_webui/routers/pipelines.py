@@ -14,6 +14,8 @@ import os
 import logging
 import shutil
 import requests
+from open_webui.utils.http import http_request_with_retry
+from open_webui.config import HTTP_REQUEST_TIMEOUT
 from pydantic import BaseModel
 from starlette.responses import FileResponse
 from typing import Optional
@@ -229,10 +231,12 @@ async def upload_pipeline(
 
         with open(file_path, "rb") as f:
             files = {"file": f}
-            r = requests.post(
+            r = http_request_with_retry(
+                "post",
                 f"{url}/pipelines/upload",
                 headers={"Authorization": f"Bearer {key}"},
                 files=files,
+                timeout=HTTP_REQUEST_TIMEOUT.value,
             )
 
         r.raise_for_status()
@@ -280,10 +284,12 @@ async def add_pipeline(
         url = request.app.state.config.OPENAI_API_BASE_URLS[urlIdx]
         key = request.app.state.config.OPENAI_API_KEYS[urlIdx]
 
-        r = requests.post(
+        r = http_request_with_retry(
+            "post",
             f"{url}/pipelines/add",
             headers={"Authorization": f"Bearer {key}"},
             json={"url": form_data.url},
+            timeout=HTTP_REQUEST_TIMEOUT.value,
         )
 
         r.raise_for_status()
@@ -363,7 +369,12 @@ async def get_pipelines(
         url = request.app.state.config.OPENAI_API_BASE_URLS[urlIdx]
         key = request.app.state.config.OPENAI_API_KEYS[urlIdx]
 
-        r = requests.get(f"{url}/pipelines", headers={"Authorization": f"Bearer {key}"})
+        r = http_request_with_retry(
+            "get",
+            f"{url}/pipelines",
+            headers={"Authorization": f"Bearer {key}"},
+            timeout=HTTP_REQUEST_TIMEOUT.value,
+        )
 
         r.raise_for_status()
         data = r.json()
@@ -400,8 +411,11 @@ async def get_pipeline_valves(
         url = request.app.state.config.OPENAI_API_BASE_URLS[urlIdx]
         key = request.app.state.config.OPENAI_API_KEYS[urlIdx]
 
-        r = requests.get(
-            f"{url}/{pipeline_id}/valves", headers={"Authorization": f"Bearer {key}"}
+        r = http_request_with_retry(
+            "get",
+            f"{url}/{pipeline_id}/valves",
+            headers={"Authorization": f"Bearer {key}"},
+            timeout=HTTP_REQUEST_TIMEOUT.value,
         )
 
         r.raise_for_status()
@@ -439,9 +453,11 @@ async def get_pipeline_valves_spec(
         url = request.app.state.config.OPENAI_API_BASE_URLS[urlIdx]
         key = request.app.state.config.OPENAI_API_KEYS[urlIdx]
 
-        r = requests.get(
+        r = http_request_with_retry(
+            "get",
             f"{url}/{pipeline_id}/valves/spec",
             headers={"Authorization": f"Bearer {key}"},
+            timeout=HTTP_REQUEST_TIMEOUT.value,
         )
 
         r.raise_for_status()
@@ -480,10 +496,12 @@ async def update_pipeline_valves(
         url = request.app.state.config.OPENAI_API_BASE_URLS[urlIdx]
         key = request.app.state.config.OPENAI_API_KEYS[urlIdx]
 
-        r = requests.post(
+        r = http_request_with_retry(
+            "post",
             f"{url}/{pipeline_id}/valves/update",
             headers={"Authorization": f"Bearer {key}"},
             json={**form_data},
+            timeout=HTTP_REQUEST_TIMEOUT.value,
         )
 
         r.raise_for_status()

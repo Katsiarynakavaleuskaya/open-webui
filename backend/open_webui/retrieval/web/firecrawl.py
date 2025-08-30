@@ -3,6 +3,8 @@ from typing import Optional, List
 from urllib.parse import urljoin
 
 import requests
+from open_webui.utils.http import http_request_with_retry
+from open_webui.config import HTTP_REQUEST_TIMEOUT
 from open_webui.retrieval.web.main import SearchResult, get_filtered_results
 from open_webui.env import SRC_LOG_LEVELS
 
@@ -19,7 +21,8 @@ def search_firecrawl(
 ) -> List[SearchResult]:
     try:
         firecrawl_search_url = urljoin(firecrawl_url, "/v1/search")
-        response = requests.post(
+        response = http_request_with_retry(
+            "post",
             firecrawl_search_url,
             headers={
                 "User-Agent": "Open WebUI (https://github.com/open-webui/open-webui) RAG Bot",
@@ -29,6 +32,7 @@ def search_firecrawl(
                 "query": query,
                 "limit": count,
             },
+            timeout=HTTP_REQUEST_TIMEOUT.value,
         )
         response.raise_for_status()
         results = response.json().get("data", [])

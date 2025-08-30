@@ -1,6 +1,8 @@
 import os
 import time
 import requests
+from open_webui.utils.http import http_request_with_retry
+from open_webui.config import HTTP_REQUEST_TIMEOUT
 import logging
 import json
 from typing import List, Optional
@@ -104,8 +106,13 @@ class DatalabMarkerLoader:
         try:
             with open(self.file_path, "rb") as f:
                 files = {"file": (filename, f, mime_type)}
-                response = requests.post(
-                    url, data=form_data, files=files, headers=headers
+                response = http_request_with_retry(
+                    "post",
+                    url,
+                    data=form_data,
+                    files=files,
+                    headers=headers,
+                    timeout=HTTP_REQUEST_TIMEOUT.value,
                 )
                 response.raise_for_status()
                 result = response.json()
@@ -141,7 +148,9 @@ class DatalabMarkerLoader:
         for _ in range(300):  # Up to 10 minutes
             time.sleep(2)
             try:
-                poll_response = requests.get(check_url, headers=headers)
+                poll_response = http_request_with_retry(
+                    "get", check_url, headers=headers, timeout=HTTP_REQUEST_TIMEOUT.value
+                )
                 poll_response.raise_for_status()
                 poll_result = poll_response.json()
             except (requests.HTTPError, ValueError) as e:

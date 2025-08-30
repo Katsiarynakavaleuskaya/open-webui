@@ -5,6 +5,8 @@ import base64
 import hmac
 import hashlib
 import requests
+from open_webui.utils.http import http_request_with_retry
+from open_webui.config import HTTP_REQUEST_TIMEOUT
 import os
 
 
@@ -75,10 +77,11 @@ def override_static(path: str, content: str):
 def get_license_data(app, key):
     if key:
         try:
-            res = requests.post(
+            res = http_request_with_retry(
+                "post",
                 "https://api.openwebui.com/api/v1/license/",
                 json={"key": key, "version": "1"},
-                timeout=5,
+                timeout=HTTP_REQUEST_TIMEOUT.value,
             )
 
             if getattr(res, "ok", False):

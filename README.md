@@ -226,6 +226,14 @@ If you are running Open WebUI in an offline environment, you can set the `HF_HUB
 export HF_HUB_OFFLINE=1
 ```
 
+### HTTP Request Timeout
+
+Internal network calls use a default timeout of 10 seconds. You can customize this value by setting the `HTTP_REQUEST_TIMEOUT` environment variable:
+
+```bash
+export HTTP_REQUEST_TIMEOUT=30
+```
+
 ## What's Next? 🌟
 
 Discover upcoming features on our roadmap in the [Open WebUI Documentation](https://docs.openwebui.com/roadmap/).
