@@ -7,6 +7,8 @@ import sys
 import shutil
 from pathlib import Path
 
+log = logging.getLogger(__name__)
+
 import markdown
 from bs4 import BeautifulSoup
 from open_webui.constants import ERROR_MESSAGES
@@ -16,20 +18,20 @@ from open_webui.constants import ERROR_MESSAGES
 ####################################
 
 OPEN_WEBUI_DIR = Path(__file__).parent  # the path containing this file
-print(OPEN_WEBUI_DIR)
+log.debug(OPEN_WEBUI_DIR)
 
 BACKEND_DIR = OPEN_WEBUI_DIR.parent  # the path containing this file
 BASE_DIR = BACKEND_DIR.parent  # the path containing the backend/
 
-print(BACKEND_DIR)
-print(BASE_DIR)
+log.debug(BACKEND_DIR)
+log.debug(BASE_DIR)
 
 try:
     from dotenv import find_dotenv, load_dotenv
 
     load_dotenv(find_dotenv(str(BASE_DIR / ".env")))
 except ImportError:
-    print("dotenv not installed, skipping...")
+    log.info("dotenv not installed, skipping...")
 
 DOCKER = os.environ.get("DOCKER", "False").lower() == "true"
 
@@ -71,7 +73,6 @@ if GLOBAL_LOG_LEVEL in logging.getLevelNamesMapping():
 else:
     GLOBAL_LOG_LEVEL = "INFO"
 
-log = logging.getLogger(__name__)
 log.info(f"GLOBAL_LOG_LEVEL: {GLOBAL_LOG_LEVEL}")
 
 if "cuda_error" in locals():

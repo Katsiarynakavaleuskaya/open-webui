@@ -435,7 +435,7 @@ from open_webui.utils.redis import get_sentinels_from_env
 
 
 if SAFE_MODE:
-    print("SAFE MODE ENABLED")
+    log.info("SAFE MODE ENABLED")
     Functions.deactivate_all_functions()
 
 logging.basicConfig(stream=sys.stdout, level=GLOBAL_LOG_LEVEL)
@@ -458,7 +458,7 @@ class SPAStaticFiles(StaticFiles):
                 raise ex
 
 
-print(
+log.info(
     rf"""
  ██████╗ ██████╗ ███████╗███╗   ██╗    ██╗    ██╗███████╗██████╗ ██╗   ██╗██╗
 ██╔═══██╗██╔══██╗██╔════╝████╗  ██║    ██║    ██║██╔════╝██╔══██╗██║   ██║██║
@@ -1359,7 +1359,7 @@ async def list_tasks_by_chat_id_endpoint(chat_id: str, user=Depends(get_verified
 
     task_ids = list_task_ids_by_chat_id(chat_id)
 
-    print(f"Task IDs for chat {chat_id}: {task_ids}")
+    log.debug(f"Task IDs for chat {chat_id}: {task_ids}")
     return {"task_ids": task_ids}
 
 
