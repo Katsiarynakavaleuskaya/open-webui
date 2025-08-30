@@ -14,7 +14,7 @@ from urllib.parse import urlencode, parse_qs, urlparse
 from pydantic import BaseModel
 from sqlalchemy import text
 
-from typing import Optional
+from typing import Optional, Literal
 from aiocache import cached
 import aiohttp
 import anyio.to_thread
@@ -1614,6 +1614,77 @@ async def get_opensearch_xml():
     </OpenSearchDescription>
     """
     return Response(content=xml_content, media_type="application/xml")
+
+
+class BMIRequest(BaseModel):
+    weight_kg: float
+    height_m: float
+    age: int
+    gender: Literal["male", "female"]
+    pregnant: bool = False
+    athlete: bool = False
+    waist_cm: Optional[float] = None
+    lang: str = "en"
+
+
+_BMI_TRANSLATIONS = {
+    "en": {
+        "underweight": "Underweight",
+        "normal": "Normal weight",
+        "overweight": "Overweight",
+        "obese": "Obesity",
+        "adult": "Adult",
+        "child": "Child",
+        "pregnant": "Pregnant",
+        "athlete": "Athlete",
+    },
+    "es": {
+        "underweight": "Bajo peso",
+        "normal": "Peso normal",
+        "overweight": "Sobrepeso",
+        "obese": "Obesidad",
+        "adult": "Adulto",
+        "child": "Niño",
+        "pregnant": "Embarazada",
+        "athlete": "Atleta",
+    },
+}
+
+
+@app.post("/bmi")
+async def bmi_endpoint(data: BMIRequest):
+    if data.height_m <= 0 or data.weight_kg <= 0:
+        raise HTTPException(
+            status_code=400, detail="weight_kg and height_m must be positive numbers"
+        )
+    if data.waist_cm is not None and data.waist_cm <= 0:
+        raise HTTPException(status_code=400, detail="waist_cm must be positive")
+
+    bmi = data.weight_kg / (data.height_m**2)
+    if bmi < 18.5:
+        category_key = "underweight"
+    elif bmi < 25:
+        category_key = "normal"
+    elif bmi < 30:
+        category_key = "overweight"
+    else:
+        category_key = "obese"
+
+    if data.pregnant:
+        group_key = "pregnant"
+    elif data.age < 18:
+        group_key = "child"
+    elif data.athlete:
+        group_key = "athlete"
+    else:
+        group_key = "adult"
+
+    translations = _BMI_TRANSLATIONS.get(data.lang.lower(), _BMI_TRANSLATIONS["en"])
+    return {
+        "bmi": round(bmi, 2),
+        "category": translations[category_key],
+        "group": translations[group_key],
+    }
 
 
 @app.get("/health")
