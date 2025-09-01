@@ -21,7 +21,7 @@ services:
         rm -rf $${HOME}/.cache
         /docker/entrypoint.sh python -u webui.py --listen --port $${WEBUI_PORT} --skip-version-check $${CLI_ARGS}
     volumes:
-      - ./test/test_files/image_gen/sd-empty.pt:/empty.pt
+      - ./tests/test_files/image_gen/sd-empty.pt:/empty.pt
 
   open-webui:
     environment:
